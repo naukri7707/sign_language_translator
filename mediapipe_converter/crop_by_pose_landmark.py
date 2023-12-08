@@ -2,10 +2,7 @@ import os
 import cv2
 import mediapipe as mp 
 import numpy as np
-
-input_root_dir = "~data/方思雯"
-output_root_dir = "~preprocessdata/方思雯"
-cropped_size = (480, 480)
+import file_enumerate as fe
 
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # 使用MP4編碼器
 
@@ -29,14 +26,12 @@ def crop(input_file_path, output_file_path):
     cap = cv2.VideoCapture(input_file_path) 
 
     # 設置影片參數
-    videoWidth = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    videoHeight = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = int(cap.get(cv2.CAP_PROP_FPS))
 
     frame_count = 0
     video_avg_sum_x, video_avg_sum_y = 0, 0
 
-    while True: 
+    while cap.isOpened(): 
         success, img = cap.read() 
         
         if not success:
@@ -70,13 +65,14 @@ def crop(input_file_path, output_file_path):
     # video_avg_avg_y = video_avg_sum_y // frame_count
 
     # 匯出裁切影片
-    out = cv2.VideoWriter(output_file_path, fourcc, fps, cropped_size)
+    cropped_size = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    out = cv2.VideoWriter(output_file_path, fourcc, fps, (cropped_size, cropped_size))
 
     # x=身體中心點, y=圖片中心點
     crop_center_x, crop_center_y = video_avg_avg_x, imageHeight // 2
-
     cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-    while True: 
+
+    while cap.isOpened():
         success, img = cap.read()
         if not success:
             break
@@ -85,8 +81,8 @@ def crop(input_file_path, output_file_path):
         imageHalfHeight = imageHeight // 2
 
         img = img[max(crop_center_y - imageHalfHeight, 0): crop_center_y + imageHalfHeight, max(crop_center_x - imageHalfHeight, 0): crop_center_x + imageHalfHeight, : ]
-        if img.shape[1] < 480:
-            padded = np.zeros((img.shape[0], max(0, 480 - img.shape[1]), img.shape[-1]), dtype=np.uint8)
+        if img.shape[1] < cropped_size:
+            padded = np.zeros((img.shape[0], max(0, cropped_size - img.shape[1]), img.shape[-1]), dtype=np.uint8)
             if crop_center_x - imageHalfHeight < 0:
                 img = np.concatenate((padded, img,), axis=1)
             else:
@@ -97,17 +93,8 @@ def crop(input_file_path, output_file_path):
     cap.release()
     out.release()
 
-for input_folder_path, dirs, files in os.walk(input_root_dir, topdown=False):
-    
-    # 產生映射路徑
-    sub_folder_dir = os.path.relpath(input_folder_path, input_root_dir)
-    output_folder_path = os.path.join(output_root_dir, sub_folder_dir)
-    os.makedirs(output_folder_path, exist_ok=True)
 
-    for full_file_name in files:
-        file_name, file_extension = os.path.splitext(full_file_name)
+input_dir = "../~data/360p"
+output_dir = "../~data/cropped"
 
-        input_file_path = os.path.join(input_folder_path, full_file_name)
-
-        output_file_path = os.path.join(output_folder_path, f"{file_name}_cropped{file_extension}")
-        crop(input_file_path, output_file_path)
+fe.walk(input_dir, output_dir, "cropped", crop)

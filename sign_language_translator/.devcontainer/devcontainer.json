@@ -3,11 +3,8 @@
 {
 	"name": "tensorflow (GPU)",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	// "image": "tensorflow/tensorflow:2.15.0-gpu",
-	"build": {
-        // Path is relative to the devcontainer.json file.
-        "dockerfile": "Dockerfile"
-    },
+	"image": "tensorflow/tensorflow:2.15.0-gpu",
+	
 	"runArgs": [
 		// uncomment this to specify container name
 		// "--name", "tensorflow_gpu",
