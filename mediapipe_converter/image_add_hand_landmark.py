@@ -21,12 +21,12 @@ rgb_image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
 result = hands.process(rgb_image)
 
-hadns = result.multi_hand_landmarks 
+hands = result.multi_hand_landmarks
 
 # print(hadns)
 
-if hadns:
-    for hand in hadns:
+if hands:
+    for hand in hands:
         # 繪製含有關節點特效的圖片
         mpDraw.draw_landmarks(img, hand, mpHand.HAND_CONNECTIONS, nodeStyle, lineStyle)
         # 取得所有關節點的資訊 (i = 索引 0-20, lm.x = x軸 ratio, lm.y = y軸 ratio)
