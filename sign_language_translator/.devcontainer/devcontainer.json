@@ -3,15 +3,18 @@
 {
 	"name": "tensorflow (GPU)",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "tensorflow/tensorflow:2.15.0-gpu",
-	
+	// "image": "tensorflow/tensorflow:2.15.0-gpu",
+	"build": {
+        // Path is relative to the devcontainer.json file.
+        "dockerfile": "Dockerfile"
+    },
 	"runArgs": [
 		// uncomment this to specify container name
 		// "--name", "tensorflow_gpu",
 		// Passing the GPU to the target image,
 		// it's equivalent to running 'sudo docker run --gpus all -it tensorflow/tensorflow:latest-gpu bash'.
-		"--gpus", "all", 
-		"-it"
+		// "--gpus", "all", 
+		// "-it"
 	],
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
