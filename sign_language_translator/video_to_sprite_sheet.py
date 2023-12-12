@@ -34,6 +34,6 @@ def convert(input_file_path, output_file_path):
     cap.release()
 
 convert(
-    "../~data/test/1.mp4",
-    "../~data/test-ok/1.mp4",
+    "~data/test/1.mp4",
+    "~data/test-ok/1.mp4",
 )
