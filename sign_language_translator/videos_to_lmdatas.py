@@ -1,7 +1,7 @@
-import json
 import cv2
 import mediapipe as mp
-from data_structures import HandInfo, PoseInfo, FrameInfo, FrameInfoContainer
+import file_walker as fw
+from data_structures import FrameInfo, FrameInfoContainer
 
 # 手部骨架檢測器
 mp_hands = mp.solutions.hands
@@ -23,12 +23,10 @@ pose_reorganizer = mp_pose.Pose(
     min_tracking_confidence=0.5   # 跟蹤置信度 
     )
 
-def videos_to_records(input_file_path, outputs_file_path: str):
-    frame = 0
+def videos_to_lmdatas(input_file_path, outputs_file_path: str):
+    
     cap = cv2.VideoCapture(input_file_path)
-
-    serialize_data = []
-
+    frame = 0
     container = FrameInfoContainer()
 
     while cap.isOpened():
@@ -38,7 +36,6 @@ def videos_to_records(input_file_path, outputs_file_path: str):
             break
         
         image_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
 
         frame += 1
         pose_data = pose_reorganizer.process(image_rgb)
@@ -52,35 +49,13 @@ def videos_to_records(input_file_path, outputs_file_path: str):
         )
         container.append(frame_info)
 
-        # serialize_data.append({
-        #     "frame": frame,
-        #     "pose":
-        #     {
-        #         "landmark": 
-        #         [
-        #             get_serial_landmark(lm)
-        #             for lm in pose_data.pose_landmarks.landmark
-        #         ],
-        #     } if pose_data.pose_landmarks else None,
-        #     "hands":
-        #     [
-        #         {
-        #             "landmark":
-        #             [
-        #                 get_serial_landmark(lm)
-        #                 for lm in hand.landmark
-        #             ]
-        #         }
-        #         for hand in hands_data.multi_hand_landmarks # hands
-        #     ] if hands_data.multi_hand_landmarks else None,
-        # })
-
     FrameInfoContainer.dump(container, outputs_file_path)
-
-    # with open(outputs_file_path, 'w') as file:
-    #     json.dump(serialize_data, file)
     cap.release()
 
 
-# 讀取 test.png
-videos_to_records('~data/test/1.mp4','~data/test/1.json')
+fw.walk(
+    '~data/2_360p',
+    '~data/3_lmdata',
+    'lmdata', 
+    videos_to_lmdatas
+    )

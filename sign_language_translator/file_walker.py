@@ -17,7 +17,7 @@ def __count_paths(input_root_dir) -> (int, int):
             file_count += 1
     return (sub_dir_count, file_count)
 
-def walk(input_root_dir, output_root_dir, tag, action):
+def walk(input_root_dir, output_root_dir, tag, action, output_extension = None):
     # create 'logs' folder if not exist
     os.makedirs(os.path.dirname(LOG_FILE_PATH), exist_ok=True)
 
@@ -41,8 +41,12 @@ def walk(input_root_dir, output_root_dir, tag, action):
             
             file_name, file_extension = os.path.splitext(full_file_name)
             input_file_path = os.path.join(current_folder_path, full_file_name)
-            output_file_path = os.path.join(output_folder_path, f"{file_name}_{tag}{file_extension}")
-            # action(input_file_path, output_file_path)
+            output_file_path = os.path.join(
+                output_folder_path,
+                f"{file_name}_{tag}{output_extension if output_extension else file_extension}"
+                )
+
+            action(input_file_path, output_file_path)
 
             end_time = time.time()
             execution_time = end_time - start_time
