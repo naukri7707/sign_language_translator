@@ -1,14 +1,7 @@
 import json
 import cv2
-from matplotlib.pylab import f
 import mediapipe as mp
-import time
-
-class FrameRecord:
-    def __init__(self, frame, pose_center, hands):
-        self.frame = frame
-        self.body_center = pose_center
-        self.hands = hands
+from data_structures import HandInfo, PoseInfo, FrameInfo, FrameInfoContainer
 
 # 手部骨架檢測器
 mp_hands = mp.solutions.hands
@@ -30,19 +23,13 @@ pose_reorganizer = mp_pose.Pose(
     min_tracking_confidence=0.5   # 跟蹤置信度 
     )
 
-def get_serial_landmark(landmark):
-    return {
-        "x": round(landmark.x, 3),
-        "y": round(landmark.y, 3), 
-        "z": round(landmark.z, 3), 
-        "v": round(landmark.visibility, 3),
-        } 
-
 def videos_to_records(input_file_path, outputs_file_path: str):
     frame = 0
     cap = cv2.VideoCapture(input_file_path)
 
     serialize_data = []
+
+    container = FrameInfoContainer()
 
     while cap.isOpened():
         success, img = cap.read()
@@ -52,35 +39,46 @@ def videos_to_records(input_file_path, outputs_file_path: str):
         
         image_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
+
         frame += 1
         pose_data = pose_reorganizer.process(image_rgb)
         hands_data = hands_reorganizer.process(image_rgb)
 
-        serialize_data.append({
-            "frame": frame,
-            "pose":
-            {
-                "landmark": 
-                [
-                    get_serial_landmark(lm)
-                    for lm in pose_data.pose_landmarks.landmark
-                ],
-            } if pose_data.pose_landmarks else None,
-            "hands":
-            [
-                {
-                    "landmark":
-                    [
-                        get_serial_landmark(lm)
-                        for lm in hand.landmark
-                    ]
-                }
-                for hand in hands_data.multi_hand_landmarks # hands
-            ] if hands_data.multi_hand_landmarks else None,
-        })
-        
-    with open(outputs_file_path, 'w') as file:
-        json.dump(serialize_data, file)
+        frame_info = FrameInfo.from_mp_data(
+            previous = container.last(),
+            frame = frame,
+            mp_pose_data = pose_data,
+            mp_hands_data = hands_data
+        )
+        container.append(frame_info)
+
+        # serialize_data.append({
+        #     "frame": frame,
+        #     "pose":
+        #     {
+        #         "landmark": 
+        #         [
+        #             get_serial_landmark(lm)
+        #             for lm in pose_data.pose_landmarks.landmark
+        #         ],
+        #     } if pose_data.pose_landmarks else None,
+        #     "hands":
+        #     [
+        #         {
+        #             "landmark":
+        #             [
+        #                 get_serial_landmark(lm)
+        #                 for lm in hand.landmark
+        #             ]
+        #         }
+        #         for hand in hands_data.multi_hand_landmarks # hands
+        #     ] if hands_data.multi_hand_landmarks else None,
+        # })
+
+    FrameInfoContainer.dump(container, outputs_file_path)
+
+    # with open(outputs_file_path, 'w') as file:
+    #     json.dump(serialize_data, file)
     cap.release()
 
 
