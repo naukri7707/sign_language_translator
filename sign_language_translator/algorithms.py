@@ -29,7 +29,7 @@ def create_distance_map(
 
 def calc_min_distance_matching(map: List[List[TDistance]]) -> (TDistance, List[TDistance]):
     row_count = len(map)
-    column_count = len(map[0])
+    column_count = 0 if row_count == 0 else len(map[0])
     
     best_distance = sys.maxsize
     best_matches = []

@@ -1,11 +1,8 @@
 from collections import deque
 import json
 from types import SimpleNamespace
-from typing import Deque, List
-
-import cv2
-import numpy as np
-
+from typing import Deque, List, Tuple
+import algorithms as alg
 
 class LandmarkInfo:
     def __init__(self, x: float, y: float, z: float, v: float) -> None:
@@ -52,6 +49,33 @@ class HandInfo:
         self.landmarks = landmarks
         pass
 
+    def offset_to_pose_left_hand(self, pose: 'PoseInfo') -> float:
+        def offset(pt1: LandmarkInfo , pt2: LandmarkInfo) -> float:
+            return abs(pt1.x - pt2.x) + abs(pt1.y - pt2.y)
+        
+        offset_sum = 0
+
+        offset_sum += offset(self.landmarks[0], pose.landmarks[15])  # wrist
+        offset_sum += offset(self.landmarks[4], pose.landmarks[21])  # thumb
+        offset_sum += offset(self.landmarks[8], pose.landmarks[19])  # index
+        offset_sum += offset(self.landmarks[20], pose.landmarks[17]) # pinky
+
+        return offset_sum
+
+
+    def offset_to_pose_right_hand(self, pose: 'PoseInfo') -> float:
+        def offset(pt1: LandmarkInfo , pt2: LandmarkInfo) -> float:
+            return abs(pt1.x - pt2.x) + abs(pt1.y - pt2.y)
+
+        offset_sum = 0
+
+        offset_sum += offset(self.landmarks[0], pose.landmarks[16])  # wrist
+        offset_sum += offset(self.landmarks[4], pose.landmarks[22])  # thumb
+        offset_sum += offset(self.landmarks[8], pose.landmarks[20])  # index
+        offset_sum += offset(self.landmarks[20], pose.landmarks[18]) # pinky
+
+        return offset_sum
+
     def offset_sum_from(self, other: 'HandInfo') -> float:
         offset_sum = 0
 
@@ -61,12 +85,15 @@ class HandInfo:
             offset_sum += offset_x + offset_y # 只比較大小，所以使用曼哈頓距離簡化
             pass
         return offset_sum
-
-    def get_abs_landmark(self, index: int, width: int, height: int) -> (int, int):
+    
+    def get_abs_landmark(self, index: int, width: int, height: int) -> Tuple[int, int]:
         return (
             int(self.landmarks[index].x * width),
             int(self.landmarks[index].y * height),
         )
+
+    def get_avg_visibility(self) -> float:
+        return sum([lm.v for lm in self.landmarks]) / 21
 
     @staticmethod
     def empty():
@@ -87,11 +114,33 @@ class FrameInfo:
     pose_info: PoseInfo
     hand_infos: List[HandInfo]
 
+    left_hand_info: HandInfo
+    right_hand_info: HandInfo
+
     def __init__(self,previous: 'FrameInfo', frame: int, pose_info: PoseInfo, hand_infos: List[HandInfo]) -> None:
         self.previous = previous
         self.frame = frame
         self.pose_info = pose_info
         self.hand_infos = hand_infos
+
+        map = [
+            [hand.offset_to_pose_left_hand(pose_info) for hand in hand_infos] if hand_infos else [],
+            [hand.offset_to_pose_right_hand(pose_info) for hand in hand_infos] if hand_infos else []
+        ]
+
+        # 矩陣反轉
+        reversed_map = [list(row) for row in zip(*map)]
+            
+        distance, match = alg.calc_min_distance_matching(reversed_map)
+
+        # 設定左右手
+        self.left_hand_info = None
+        self.right_hand_info = None
+        for idx, match_idx in enumerate(match):
+            if match_idx == 0:
+                self.left_hand_info = hand_infos[idx]
+            elif match_idx == 1:
+                self.right_hand_info = hand_infos[idx]
         pass
 
     @staticmethod
@@ -108,26 +157,20 @@ class FrameInfo:
 
 class FrameInfoContainer:
     __max_frame_count : int
-    __frame_infos : Deque[FrameInfo]
+    frame_infos : Deque[FrameInfo]
 
     def __init__(self, max_frame_count: int = -1) -> None:
         self.__max_frame_count = max_frame_count
-        self.__frame_infos = deque()
+        self.frame_infos = deque()
         pass
 
     def append(self, frame_info: FrameInfo):
         # 如果超過最大數量，就移除最舊的
-        if self.__max_frame_count > 0 and len(self.__frame_infos) >= self.__max_frame_count:
-                self.__frame_infos.popleft()
+        if self.__max_frame_count > 0 and len(self.frame_infos) >= self.__max_frame_count:
+                self.frame_infos.popleft()
         # 加入新的
-        self.__frame_infos.append(frame_info)
+        self.frame_infos.append(frame_info)
         pass
-
-    def last(self) -> FrameInfo:
-        return self.__frame_infos[-1] if len(self.__frame_infos) > 0 else None
-
-    def get_info(self, index: int) -> FrameInfo:
-        return self.__frame_infos[index]
 
     @staticmethod
     def dump(target: 'FrameInfoContainer', json_file_path: str):
@@ -137,7 +180,7 @@ class FrameInfoContainer:
             "frame_infos" : []
         }
 
-        for frame_info in target.__frame_infos:
+        for frame_info in target.frame_infos:
             serialized_data["frame_infos"].append({
                 "frame": frame_info.frame,
                 "pose_info":
@@ -192,7 +235,7 @@ class FrameInfoContainer:
                     continue
                 container.append(
                     FrameInfo(
-                        previous = container.last(),
+                        previous = container.frame_infos[-1] if container.frame_infos and len(container.frame_infos) > 0 else None,
                         frame = frame_info.frame,
                         pose_info = PoseInfo(
                             landmarks = [
@@ -203,7 +246,7 @@ class FrameInfoContainer:
                                     v = lm.v,
                                 )
                                 for lm in frame_info.pose_info.landmark
-                            ] if frame_info.pose_info else None,
+                            ] if frame_info.pose_info and frame_info.pose_info.landmark else None,
                         ),
                         hand_infos = [
                             HandInfo(

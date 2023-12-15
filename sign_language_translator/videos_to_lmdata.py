@@ -1,7 +1,7 @@
 import cv2
 import mediapipe as mp
 import file_walker as fw
-from data_structures import FrameInfo, FrameInfoContainer
+from models import FrameInfo, FrameInfoContainer
 
 # 手部骨架檢測器
 mp_hands = mp.solutions.hands
@@ -23,7 +23,7 @@ pose_reorganizer = mp_pose.Pose(
     min_tracking_confidence=0.5   # 跟蹤置信度 
     )
 
-def videos_to_lmdatas(input_file_path, outputs_file_path: str):
+def videos_to_lmdata(input_file_path, outputs_file_path: str):
     
     cap = cv2.VideoCapture(input_file_path)
     frame = 0
@@ -42,7 +42,7 @@ def videos_to_lmdatas(input_file_path, outputs_file_path: str):
         hands_data = hands_reorganizer.process(image_rgb)
 
         frame_info = FrameInfo.from_mp_data(
-            previous = container.last(),
+            previous = container.frame_infos[-1] if container.frame_infos and len(container.frame_infos) > 0 else None,
             frame = frame,
             mp_pose_data = pose_data,
             mp_hands_data = hands_data
@@ -57,7 +57,7 @@ fw.walk(
     '~data/2_360p',
     '~data/3_lmdata',
     'lmdata', 
-    videos_to_lmdatas,
+    videos_to_lmdata,
     output_extension='.json',
-    skip=6439
+    skip=6652
     )
