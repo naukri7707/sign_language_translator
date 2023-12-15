@@ -1,7 +1,7 @@
 import cv2
 import mediapipe as mp
 import file_walker as fw
-from data_structures import FrameInfo, FrameInfoContainer
+from models import FrameInfo, FrameInfoContainer
 
 # 手部骨架檢測器
 mp_hands = mp.solutions.hands
