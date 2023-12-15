@@ -1,7 +1,7 @@
 import cv2
 import mediapipe as mp
 import file_walker as fw
-from models import FrameInfo, FrameInfoContainer
+from data_structures import FrameInfo, FrameInfoContainer
 
 # 手部骨架檢測器
 mp_hands = mp.solutions.hands
@@ -57,5 +57,7 @@ fw.walk(
     '~data/2_360p',
     '~data/3_lmdata',
     'lmdata', 
-    videos_to_lmdatas
+    videos_to_lmdatas,
+    output_extension='.json',
+    skip=6439
     )

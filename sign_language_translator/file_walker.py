@@ -17,7 +17,7 @@ def __count_paths(input_root_dir) -> (int, int):
             file_count += 1
     return (sub_dir_count, file_count)
 
-def walk(input_root_dir, output_root_dir, tag, action, output_extension = None):
+def walk(input_root_dir, output_root_dir, tag, action, output_extension = None, skip = 0):
     # create 'logs' folder if not exist
     os.makedirs(os.path.dirname(LOG_FILE_PATH), exist_ok=True)
 
@@ -36,19 +36,22 @@ def walk(input_root_dir, output_root_dir, tag, action, output_extension = None):
         output_folder_path = os.path.join(output_root_dir, sub_folder_dir)
         os.makedirs(output_folder_path, exist_ok=True)
         for full_file_name in files:
+
             current_file_count += 1
             start_time = time.time()
             
             file_name, file_extension = os.path.splitext(full_file_name)
             input_file_path = os.path.join(current_folder_path, full_file_name)
-            output_file_path = os.path.join(
-                output_folder_path,
-                f"{file_name}_{tag}{output_extension if output_extension else file_extension}"
-                )
+            output_file_name = f"{file_name}_{tag}{output_extension if output_extension else file_extension}"
+            output_file_path = os.path.join(output_folder_path, output_file_name)
 
-            action(input_file_path, output_file_path)
+            if current_file_count <= skip:
+                __print_and_log(f'[{str(current_file_count).rjust(file_rjust_len)}/{str(file_count).rjust(file_rjust_len)}] Skip process "{output_file_name}".')
+                continue
+            else:
+                action(input_file_path, output_file_path)
 
             end_time = time.time()
             execution_time = end_time - start_time
-            __print_and_log(f'[{str(current_file_count).rjust(file_rjust_len)}/{str(file_count).rjust(file_rjust_len)}] Completed process "{full_file_name}" in {round(execution_time, 2)}s')
+            __print_and_log(f'[{str(current_file_count).rjust(file_rjust_len)}/{str(file_count).rjust(file_rjust_len)}] Completed process "{output_file_name}" in {round(execution_time, 2)}s.')
     __print_and_log(f"Done!")
