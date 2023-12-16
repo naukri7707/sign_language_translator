@@ -30,6 +30,7 @@ def create_distance_map(
 def calc_min_distance_matching(map: List[List[TDistance]]) -> (TDistance, List[TDistance]):
     row_count = len(map)
     column_count = 0 if row_count == 0 else len(map[0])
+    match_count = min(row_count, column_count)
     
     best_distance = sys.maxsize
     best_matches = []
@@ -40,23 +41,23 @@ def calc_min_distance_matching(map: List[List[TDistance]]) -> (TDistance, List[T
         nonlocal best_distance, best_matches, match_point_count
         
         # 剪枝 : 如果當前分數已經大於最佳分數，則不再繼續
-        if dis > best_distance:
-            return
+        # if dis > best_distance:
+        #     return
 
         # 如果已經找到所有點的匹配，則嘗試更新最佳分數
-        if match_point_count == row_count:
+        if match_point_count == match_count:
             if(dis < best_distance):
                 best_distance = dis
                 best_matches = match.copy()
             return
         
-        # 如果已經遍歷完所有 b 點，則不再繼續
+        # 如果已經遍歷完所有 row 點，則不再繼續
         if i == row_count:
             return
 
         for j in range(-1, column_count):
             # 如果當前 b 點已經被匹配，則不再繼續
-            if j in match:
+            if j != -1 and j in match:
                 continue
 
             # 
@@ -73,4 +74,5 @@ def calc_min_distance_matching(map: List[List[TDistance]]) -> (TDistance, List[T
         pass
     
     dfs(0,0)
+
     return (best_distance, best_matches)

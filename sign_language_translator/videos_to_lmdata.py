@@ -23,7 +23,7 @@ pose_reorganizer = mp_pose.Pose(
     min_tracking_confidence=0.5   # 跟蹤置信度 
     )
 
-def videos_to_lmdata(input_file_path, outputs_file_path: str):
+def videos_to_lmdata(input_file_path, output_file_path: str):
     
     cap = cv2.VideoCapture(input_file_path)
     frame = 0
@@ -49,11 +49,11 @@ def videos_to_lmdata(input_file_path, outputs_file_path: str):
         )
         container.append(frame_info)
 
-    FrameInfoContainer.dump(container, outputs_file_path)
+    FrameInfoContainer.dump(container, output_file_path)
     cap.release()
 
 
-fw.walk(
+fw.walk_old(
     '~data/2_360p',
     '~data/3_lmdata',
     'lmdata', 

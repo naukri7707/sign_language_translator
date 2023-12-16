@@ -2,6 +2,8 @@ from collections import deque
 import json
 from types import SimpleNamespace
 from typing import Deque, List, Tuple
+
+import numpy as np
 import algorithms as alg
 
 class LandmarkInfo:
@@ -28,6 +30,17 @@ class PoseInfo:
         self.landmarks = landmarks
         pass
 
+    def get_abs_landmark(self, index: int, width: int, height: int) -> Tuple[int, int]:
+        return (
+            int(self.landmarks[index].x * width),
+            int(self.landmarks[index].y * height),
+        )
+    
+    def get_avg_x(self) -> float:
+        return np.average([lm.x for lm in self.landmarks])
+    
+    def get_avg_y(self) -> float:
+        return np.average([lm.y for lm in self.landmarks])
 
     @staticmethod
     def empty():
@@ -45,36 +58,12 @@ class PoseInfo:
 class HandInfo:
     landmarks: List[LandmarkInfo]
 
+    tracking_previous_hand: 'HandInfo'
+
     def __init__(self, landmarks: List[LandmarkInfo]) -> None:
         self.landmarks = landmarks
+        self.tracking_previous_hand = None
         pass
-
-    def offset_to_pose_left_hand(self, pose: 'PoseInfo') -> float:
-        def offset(pt1: LandmarkInfo , pt2: LandmarkInfo) -> float:
-            return abs(pt1.x - pt2.x) + abs(pt1.y - pt2.y)
-        
-        offset_sum = 0
-
-        offset_sum += offset(self.landmarks[0], pose.landmarks[15])  # wrist
-        offset_sum += offset(self.landmarks[4], pose.landmarks[21])  # thumb
-        offset_sum += offset(self.landmarks[8], pose.landmarks[19])  # index
-        offset_sum += offset(self.landmarks[20], pose.landmarks[17]) # pinky
-
-        return offset_sum
-
-
-    def offset_to_pose_right_hand(self, pose: 'PoseInfo') -> float:
-        def offset(pt1: LandmarkInfo , pt2: LandmarkInfo) -> float:
-            return abs(pt1.x - pt2.x) + abs(pt1.y - pt2.y)
-
-        offset_sum = 0
-
-        offset_sum += offset(self.landmarks[0], pose.landmarks[16])  # wrist
-        offset_sum += offset(self.landmarks[4], pose.landmarks[22])  # thumb
-        offset_sum += offset(self.landmarks[8], pose.landmarks[20])  # index
-        offset_sum += offset(self.landmarks[20], pose.landmarks[18]) # pinky
-
-        return offset_sum
 
     def offset_sum_from(self, other: 'HandInfo') -> float:
         offset_sum = 0
@@ -91,9 +80,12 @@ class HandInfo:
             int(self.landmarks[index].x * width),
             int(self.landmarks[index].y * height),
         )
-
-    def get_avg_visibility(self) -> float:
-        return sum([lm.v for lm in self.landmarks]) / 21
+    
+    def get_avg_x(self) -> float:
+        return np.average([lm.x for lm in self.landmarks])
+    
+    def get_avg_y(self) -> float:
+        return np.average([lm.y for lm in self.landmarks])
 
     @staticmethod
     def empty():
@@ -114,33 +106,25 @@ class FrameInfo:
     pose_info: PoseInfo
     hand_infos: List[HandInfo]
 
-    left_hand_info: HandInfo
-    right_hand_info: HandInfo
-
     def __init__(self,previous: 'FrameInfo', frame: int, pose_info: PoseInfo, hand_infos: List[HandInfo]) -> None:
         self.previous = previous
         self.frame = frame
         self.pose_info = pose_info
         self.hand_infos = hand_infos
 
-        map = [
-            [hand.offset_to_pose_left_hand(pose_info) for hand in hand_infos] if hand_infos else [],
-            [hand.offset_to_pose_right_hand(pose_info) for hand in hand_infos] if hand_infos else []
-        ]
-
-        # 矩陣反轉
-        reversed_map = [list(row) for row in zip(*map)]
-            
-        distance, match = alg.calc_min_distance_matching(reversed_map)
-
-        # 設定左右手
-        self.left_hand_info = None
-        self.right_hand_info = None
-        for idx, match_idx in enumerate(match):
-            if match_idx == 0:
-                self.left_hand_info = hand_infos[idx]
-            elif match_idx == 1:
-                self.right_hand_info = hand_infos[idx]
+        # 追蹤手勢時間軸
+        if self.previous:
+            map = alg.create_distance_map(
+                hand_infos,
+                previous.hand_infos,
+                lambda c, p: c.offset_sum_from(p)
+                )
+            distance, matches = alg.calc_min_distance_matching(map)
+            for idx, match in enumerate(matches):
+                if match == -1:
+                    continue
+                self.hand_infos[idx].tracking_previous_hand = previous.hand_infos[match]
+       
         pass
 
     @staticmethod
@@ -185,7 +169,7 @@ class FrameInfoContainer:
                 "frame": frame_info.frame,
                 "pose_info":
                 {
-                    "landmark":
+                    "landmarks":
                     [
                         {
                             "x": lm.x,
@@ -195,11 +179,11 @@ class FrameInfoContainer:
                         }
                         for lm in frame_info.pose_info.landmarks
                     ],
-                } if frame_info.pose_info else None,
+                } if frame_info.pose_info and frame_info.pose_info.landmarks else None,
                 "hand_infos":
                 [
                     {
-                        "landmark":
+                        "landmarks":
                         [
                             {
                                 "x": lm.x,
@@ -245,8 +229,8 @@ class FrameInfoContainer:
                                     z = lm.z,
                                     v = lm.v,
                                 )
-                                for lm in frame_info.pose_info.landmark
-                            ] if frame_info.pose_info and frame_info.pose_info.landmark else None,
+                                for lm in frame_info.pose_info.landmarks
+                            ] if frame_info.pose_info and frame_info.pose_info.landmarks else None,
                         ),
                         hand_infos = [
                             HandInfo(
@@ -257,7 +241,7 @@ class FrameInfoContainer:
                                         z = lm.z,
                                         v = lm.v,
                                     )
-                                    for lm in hand.landmark
+                                    for lm in hand.landmarks
                                 ]
                             )
                             for hand in frame_info.hand_infos
@@ -266,4 +250,3 @@ class FrameInfoContainer:
                 )
 
             return container
-

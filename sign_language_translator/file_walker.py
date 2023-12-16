@@ -1,5 +1,6 @@
 import os
 import time
+from typing import Callable
 
 LOG_FILE_PATH = "logs/file_walker.log"
 
@@ -17,7 +18,52 @@ def __count_paths(input_root_dir) -> (int, int):
             file_count += 1
     return (sub_dir_count, file_count)
 
-def walk(input_root_dir, output_root_dir, tag, action, output_extension = None, skip = 0):
+def walk(walk_root_dir: str, mapping_dirs: [(str, Callable[[str], str])], action, skip = 0):
+    # create 'logs' folder if not exist
+    os.makedirs(os.path.dirname(LOG_FILE_PATH), exist_ok=True)
+    sub_dir_count, file_count = __count_paths(walk_root_dir)
+
+    # log variables
+    current_sub_dir_count = 0
+    current_file_count = 0
+    sub_dir_rjust_len = len(str(sub_dir_count))
+    file_rjust_len = len(str(file_count))
+
+    for current_folder_path, sub_dirs, files in os.walk(walk_root_dir, topdown=False):
+        current_sub_dir_count += 1
+        __print_and_log(f"Start process dir: {current_folder_path} ({str(current_sub_dir_count).rjust(sub_dir_rjust_len)}/{sub_dir_count})")
+
+        sub_folder_relpath = os.path.relpath(current_folder_path, walk_root_dir)
+
+        # generate dirs
+        mapping_file_folder_dirs = [os.path.join(root_dir, sub_folder_relpath) for (root_dir, _) in mapping_dirs]
+        for dir in mapping_file_folder_dirs:
+            os.makedirs(dir, exist_ok=True)
+        
+        # iterate files
+        for full_file_name in files:
+            current_file_count += 1
+            file_name, file_extension = os.path.splitext(full_file_name)
+            
+            walk_file_path = os.path.join(current_folder_path, full_file_name)
+            mapping_file_names = [renamer(file_name) for (_, renamer) in mapping_dirs]
+            mapping_file_paths = [os.path.join(dir, name) for dir, name in zip(mapping_file_folder_dirs, mapping_file_names)]
+
+            start_time = time.time()
+
+            if current_file_count <= skip:
+                __print_and_log(f'[{str(current_file_count).rjust(file_rjust_len)}/{str(file_count).rjust(file_rjust_len)}] Skip process "{walk_file_path}".')
+                continue
+            else:
+                action(walk_file_path, mapping_file_paths)
+
+            end_time = time.time()
+            execution_time = end_time - start_time
+            __print_and_log(f'[{str(current_file_count).rjust(file_rjust_len)}/{str(file_count).rjust(file_rjust_len)}] Completed process "{walk_file_path}" in {round(execution_time, 2)}s.')
+    __print_and_log(f"Done!")
+
+
+def walk_old(input_root_dir, output_root_dir, tag, action, output_extension = None, skip = 0):
     # create 'logs' folder if not exist
     os.makedirs(os.path.dirname(LOG_FILE_PATH), exist_ok=True)
 
