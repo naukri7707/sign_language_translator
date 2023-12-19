@@ -1,6 +1,5 @@
 import cv2
 import mediapipe as mp
-import file_walker as fw
 from models import FrameInfo, FrameInfoContainer
 
 # 手部骨架檢測器
@@ -51,13 +50,3 @@ def videos_to_lmdata(input_file_path, output_file_path: str):
 
     FrameInfoContainer.dump(container, output_file_path)
     cap.release()
-
-
-fw.walk_old(
-    '~data/2_360p',
-    '~data/3_lmdata',
-    'lmdata', 
-    videos_to_lmdata,
-    output_extension='.json',
-    skip=6652
-    )
