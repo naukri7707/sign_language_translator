@@ -203,37 +203,30 @@ class FrameInfoContainer:
         pass
 
     @staticmethod
-    def load(json_file_path: str, step: int = 1) -> 'FrameInfoContainer':
+    def load(json_file_path: str, step: int = 1) -> List['FrameInfoContainer']:
         with open(json_file_path, 'r') as file:
             serialized_data = json.load(file, object_hook=lambda d: SimpleNamespace(**d))
 
             if serialized_data is None:
                 return None
 
-            container = FrameInfoContainer(
-                max_frame_count = serialized_data.max_frame_count
-                )
+            stepped_max_frame_count = serialized_data.max_frame_count // step
 
-            for idx, frame_info in enumerate(serialized_data.frame_infos):
-                if (idx + 1) % step != 0:
-                    continue
-                container.append(
-                    FrameInfo(
-                        previous = container.frame_infos[-1] if container.frame_infos and len(container.frame_infos) > 0 else None,
-                        frame = frame_info.frame,
-                        pose_info = PoseInfo(
-                            landmarks = [
-                                LandmarkInfo(
-                                    x = lm.x,
-                                    y = lm.y,
-                                    z = lm.z,
-                                    v = lm.v,
-                                )
-                                for lm in frame_info.pose_info.landmarks
-                            ] if frame_info.pose_info and frame_info.pose_info.landmarks else None,
-                        ),
-                        hand_infos = [
-                            HandInfo(
+            containers = []
+
+            for i in range(step):
+                container = FrameInfoContainer(
+                    max_frame_count = stepped_max_frame_count
+                    )
+
+                for idx, frame_info in enumerate(serialized_data.frame_infos):
+                    if (idx + 1) % step != i:
+                        continue
+                    container.append(
+                        FrameInfo(
+                            previous = container.frame_infos[-1] if container.frame_infos and len(container.frame_infos) > 0 else None,
+                            frame = frame_info.frame,
+                            pose_info = PoseInfo(
                                 landmarks = [
                                     LandmarkInfo(
                                         x = lm.x,
@@ -241,12 +234,26 @@ class FrameInfoContainer:
                                         z = lm.z,
                                         v = lm.v,
                                     )
-                                    for lm in hand.landmarks
-                                ]
-                            )
-                            for hand in frame_info.hand_infos
-                        ] if frame_info.hand_infos else None,
+                                    for lm in frame_info.pose_info.landmarks
+                                ] if frame_info.pose_info and frame_info.pose_info.landmarks else None,
+                            ),
+                            hand_infos = [
+                                HandInfo(
+                                    landmarks = [
+                                        LandmarkInfo(
+                                            x = lm.x,
+                                            y = lm.y,
+                                            z = lm.z,
+                                            v = lm.v,
+                                        )
+                                        for lm in hand.landmarks
+                                    ]
+                                )
+                                for hand in frame_info.hand_infos
+                            ] if frame_info.hand_infos else None,
+                        )
                     )
-                )
+                
+                containers.append(container)
 
-            return container
+            return containers

@@ -1,7 +1,7 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/python
 {
-	"name": "tensorflow (GPU)",
+	"name": "sign_language_translator (TF-GPU)",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
 	// "image": "tensorflow/tensorflow:2.15.0-gpu",
 	"build": {
@@ -10,11 +10,11 @@
     },
 	"runArgs": [
 		// uncomment this to specify container name
-		// "--name", "tensorflow_gpu",
+		"--name", "sign_language_translator",
 		// Passing the GPU to the target image,
 		// it's equivalent to running 'sudo docker run --gpus all -it tensorflow/tensorflow:latest-gpu bash'.
-		// "--gpus", "all", 
-		// "-it"
+		"--gpus", "all", 
+		"-it"
 	],
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
