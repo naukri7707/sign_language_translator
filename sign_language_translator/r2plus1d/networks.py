@@ -1,6 +1,6 @@
 import keras
 from keras import layers
-from layers import Conv2Plus1D, ResidualMain, Project, ResizeVideo
+from r2plus1d.layers import Conv2Plus1D, ResidualMain, Project, ResizeVideo
 
 def add_residual_block(input, filters, kernel_size):
   """
@@ -18,7 +18,7 @@ def add_residual_block(input, filters, kernel_size):
 
   return layers.add([res, out])
 
-def build(height, width, class_num):
+def create(height: float, width: float, class_num: int) -> keras.Model:
     input_shape = (None, 10, height, width, 3)
     input = layers.Input(shape=(input_shape[1:]))
     x = input
@@ -45,6 +45,6 @@ def build(height, width, class_num):
 
     x = layers.GlobalAveragePooling3D()(x)
     x = layers.Flatten()(x)
-    x = layers.Dense(10)(x)
+    x = layers.Dense(class_num)(x)
 
-    model = keras.Model(input, x)
+    return keras.Model(input, x)

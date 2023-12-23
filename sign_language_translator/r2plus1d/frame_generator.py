@@ -1,22 +1,9 @@
-import tqdm
+import os
 import random
-import pathlib
-import itertools
-import collections
-
 import cv2
-import einops
 import numpy as np
-import remotezip as rz
-import seaborn as sns
-import matplotlib.pyplot as plt
 
 import tensorflow as tf
-import keras
-from keras import layers
-
-n_frames = 20
-batch_size = 64
 
 def format_frames(frame, output_size):
   """
@@ -81,7 +68,7 @@ def frames_from_video_file(video_path, n_frames, output_size = (360,360), frame_
   return result
 
 class FrameGenerator:
-  def __init__(self, path, n_frames, training = False):
+  def __init__(self, path, n_frames, glob_patten, training = False):
     """ 
       回傳具有相關標籤的一組影格
     
@@ -92,12 +79,16 @@ class FrameGenerator:
     """
     self.path = path
     self.n_frames = n_frames
+    self.glob_patten = glob_patten
     self.training = training
-    self.class_names = sorted(set(p.name for p in self.path.iterdir() if p.is_dir()))
+    
+    content = os.listdir(path)
+
+    self.class_names = sorted(content)
     self.class_ids_for_name = dict((name, idx) for idx, name in enumerate(self.class_names))
 
   def get_frames_and_class_names(self):
-    frames_folder_paths = list(self.path.glob('*/*.mp4'))      # 設定路徑 class_label/frames_set
+    frames_folder_paths = list(self.path.glob(self.glob_patten))  # 設定路徑 class_label/frames_set
     classes = [p.parent.name for p in frames_folder_paths] # 設定路徑標籤 (基本上都一樣會是 class_label 資料夾)
     return frames_folder_paths, classes
 
@@ -114,31 +105,3 @@ class FrameGenerator:
       video_frames = frames_from_video_file(path, self.n_frames) 
       label = self.class_ids_for_name[name] # 將標籤映射成整數
       yield video_frames, label
-
-output_signature = (
-    tf.TensorSpec(shape = (None, None, None, 3), dtype = tf.float32),
-    tf.TensorSpec(shape = (), dtype = tf.int16)
-    )
-
-train_ds = tf.data.Dataset.from_generator(
-    FrameGenerator(subset_paths['train'], n_frames, training=True),
-    output_signature = output_signature
-    )
-
-
-# Batch the data
-train_ds = train_ds.batch(batch_size)
-
-val_ds = tf.data.Dataset.from_generator(
-    FrameGenerator(subset_paths['val'], n_frames),
-    output_signature = output_signature
-    )
-
-val_ds = val_ds.batch(batch_size)
-
-test_ds = tf.data.Dataset.from_generator(
-    FrameGenerator(subset_paths['test'], n_frames),
-    output_signature = output_signature
-    )
-
-test_ds = test_ds.batch(batch_size)
