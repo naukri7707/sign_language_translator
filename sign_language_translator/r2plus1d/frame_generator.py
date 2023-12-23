@@ -85,9 +85,7 @@ class FrameGenerator:
     self.glob_patten = glob_patten
     self.training = training
     
-    content = os.listdir(path)
-
-    self.class_names = sorted(content)
+    self.class_names = sorted([subdir.name for subdir in path.iterdir() if subdir.is_dir()])
     self.class_ids_for_name = dict((name, idx) for idx, name in enumerate(self.class_names))
 
   def get_data(self):

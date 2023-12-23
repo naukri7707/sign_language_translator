@@ -13,8 +13,8 @@
 		"--name", "sign_language_translator",
 		// Passing the GPU to the target image,
 		// it's equivalent to running 'sudo docker run --gpus all -it tensorflow/tensorflow:latest-gpu bash'.
-		"--gpus", "all", 
-		"-it"
+		// "--gpus", "all", 
+		// "-it"
 	],
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
