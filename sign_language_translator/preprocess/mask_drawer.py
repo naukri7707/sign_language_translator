@@ -1,9 +1,8 @@
 
 import cv2
 import numpy as np
-import algorithms as alg
 
-from models import FrameInfo, HandInfo
+from preprocess.models import FrameInfo, HandInfo
 
 def create_pose_mask(frame_info: FrameInfo, src_img: cv2.typing.MatLike) -> cv2.typing.MatLike:
     mask = np.zeros_like(src_img)
@@ -90,15 +89,15 @@ def create_hand_mask(frame_info: FrameInfo, src_img: cv2.typing.MatLike) -> cv2.
             draw_line(13,17)
     return mask
 cnt = 0
-def create_optical_flow_mask(
+def create_timeline_flow_mask(
     frame_info: FrameInfo,
     src_img: cv2.typing.MatLike,
-    tail_length = 7                 # 尾巴長度，這會追蹤前 tail_length 幀的資訊來產生
+    timeline_length = 7                 # 尾巴長度，這會追蹤前 tail_length 幀的資訊來產生
     ) -> cv2.typing.MatLike:
 
     frame_infos = []
     current = frame_info
-    for i in range(tail_length):
+    for i in range(timeline_length):
         frame_infos.append(frame_info)
         if not current.previous:
             break
@@ -128,12 +127,12 @@ def create_optical_flow_mask(
             thickness = max(int(ratio * 10), 1)
             cv2.line(mask, start, end, color, thickness)
     
-    end = min(len(frame_infos), tail_length)
+    end = min(len(frame_infos), timeline_length)
     for i in range(1, end):
         if frame_infos[i].hand_infos:
             for hand in frame_infos[i].hand_infos:
                 if hand.tracking_previous_hand:
-                    draw_claw_marks(hand, hand.tracking_previous_hand, i / tail_length)
+                    draw_claw_marks(hand, hand.tracking_previous_hand, i / timeline_length)
                     
                 
     return mask

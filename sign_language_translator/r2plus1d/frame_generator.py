@@ -2,6 +2,7 @@ import os
 import random
 import cv2
 import numpy as np
+from pathlib import Path
 
 import tensorflow as tf
 
@@ -68,7 +69,7 @@ def frames_from_video_file(video_path, n_frames, output_size = (360,360), frame_
   return result
 
 class FrameGenerator:
-  def __init__(self, path, n_frames, glob_patten, training = False):
+  def __init__(self, path, n_frames, frame_size, frame_step, glob_patten, training = False):
     """ 
       回傳具有相關標籤的一組影格
     
@@ -77,8 +78,10 @@ class FrameGenerator:
         n_frames: 影片檔案路徑
         training: 是否正在建立訓練資料集
     """
-    self.path = path
+    self.path = Path(path)
     self.n_frames = n_frames
+    self.frame_size = frame_size
+    self.frame_step = frame_step
     self.glob_patten = glob_patten
     self.training = training
     
@@ -87,21 +90,26 @@ class FrameGenerator:
     self.class_names = sorted(content)
     self.class_ids_for_name = dict((name, idx) for idx, name in enumerate(self.class_names))
 
-  def get_frames_and_class_names(self):
-    frames_folder_paths = list(self.path.glob(self.glob_patten))  # 設定路徑 class_label/frames_set
-    classes = [p.parent.name for p in frames_folder_paths] # 設定路徑標籤 (基本上都一樣會是 class_label 資料夾)
-    return frames_folder_paths, classes
+  def get_data(self):
+    video_paths = list(self.path.glob(self.glob_patten))  # 設定路徑 class_label/frames_set
+    classes = [p.parent.name for p in video_paths]  # 設定路徑標籤 (基本上都一樣會是 class_label 資料夾)
+    return video_paths, classes
 
   def __call__(self):
-    frames_folder_path, classes = self.get_frames_and_class_names()
+    file_paths, classes = self.get_data()
 
-    pairs = list(zip(frames_folder_path, classes))
+    pairs = list(zip(file_paths, classes))
 
     # 如果是訓練資料集，則將資料隨機化
     if self.training:
       random.shuffle(pairs)
 
     for path, name in pairs:
-      video_frames = frames_from_video_file(path, self.n_frames) 
+      video_frames = frames_from_video_file(
+        path,
+        self.n_frames,
+        self.frame_size,
+        self.frame_step,
+        ) 
       label = self.class_ids_for_name[name] # 將標籤映射成整數
       yield video_frames, label

@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from typing import Deque, List, Tuple
 
 import numpy as np
-import algorithms as alg
+import preprocess.algorithms as alg
 
 class LandmarkInfo:
     def __init__(self, x: float, y: float, z: float, v: float) -> None:

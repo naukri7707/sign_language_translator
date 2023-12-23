@@ -1,6 +1,7 @@
+from typing import List
 import cv2
 import mediapipe as mp
-from models import FrameInfo, FrameInfoContainer
+from preprocess.models import FrameInfo, FrameInfoContainer
 
 # 手部骨架檢測器
 mp_hands = mp.solutions.hands
@@ -22,8 +23,10 @@ pose_reorganizer = mp_pose.Pose(
     min_tracking_confidence=0.5   # 跟蹤置信度 
     )
 
-def videos_to_lmdata(input_file_path, output_file_path: str):
-    
+def generate_lmdata(input_file_path, mapping_paths: List[str]):
+
+    output_file_path = mapping_paths[0]
+
     cap = cv2.VideoCapture(input_file_path)
     frame = 0
     container = FrameInfoContainer()

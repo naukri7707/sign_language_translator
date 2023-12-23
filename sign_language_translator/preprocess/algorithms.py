@@ -1,5 +1,5 @@
 import sys
-from typing import Any, List, Callable, Tuple, TypeVar
+from typing import Any, List, Callable, TypeVar
 
 T = TypeVar('T')
 TDistance = TypeVar('TDistance')

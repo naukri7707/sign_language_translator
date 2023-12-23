@@ -1,15 +1,9 @@
 import tensorflow as tf
 import keras
 
-import r2plus1d.networks as net
+import r2plus1d as net
 from r2plus1d.frame_generator import FrameGenerator
-
-EPOCHS = 50
-N_FRAMES = 20
-BATCH_SIZE = 64
-IMG_HEIGHT = 360
-IMG_WIDTH = 360
-CLASS_NUM = 10
+import params
 
 output_signature = (
     tf.TensorSpec(shape = (None, None, None, 3), dtype = tf.float32),
@@ -17,29 +11,49 @@ output_signature = (
     )
 
 train_ds = tf.data.Dataset.from_generator(
-    FrameGenerator('~data/1~10', N_FRAMES, glob_patten='*/*_offset1.mp4', training=True),
+    FrameGenerator(
+        '~data/1~10',
+        params.N_FRAMES,
+        params.FRAME_SIZE,
+        params.FRAME_STEP,
+        glob_patten='*/*_offset1.mp4',
+        training=True,
+        ),
     output_signature = output_signature
     )
-
 
 # Batch the data
-train_ds = train_ds.batch(BATCH_SIZE)
+train_ds = train_ds.batch(params.BATCH_SIZE)
 
 val_ds = tf.data.Dataset.from_generator(
-    FrameGenerator('~data/1~10', N_FRAMES, glob_patten='*/*_offset2.mp4',),
+    FrameGenerator(
+        '~data/1~10',
+        params.N_FRAMES,
+        params.FRAME_SIZE,
+        params.FRAME_STEP,
+        glob_patten='*/*_offset2.mp4',
+        ),
     output_signature = output_signature
     )
 
-val_ds = val_ds.batch(BATCH_SIZE)
+val_ds = val_ds.batch(params.BATCH_SIZE)
 
 test_ds = tf.data.Dataset.from_generator(
-    FrameGenerator('~data/1~10', N_FRAMES, glob_patten='*/*_offset3.mp4',),
+    FrameGenerator(
+        '~data/1~10',
+        params.N_FRAMES,
+        params.FRAME_SIZE,
+        params.FRAME_STEP,
+        glob_patten='*/*_offset3.mp4',
+        ),
     output_signature = output_signature
     )
 
-test_ds = test_ds.batch(BATCH_SIZE)
+test_ds = test_ds.batch(params.BATCH_SIZE)
 
-model = net.create(IMG_HEIGHT, IMG_WIDTH, CLASS_NUM)
+frame_x, frame_y = params.FRAME_SIZE
+
+model = net.create(frame_x, frame_y, params.CLASS_NUM)
 
 model.compile(
     loss = keras.losses.SparseCategoricalCrossentropy(from_logits=True),
@@ -55,10 +69,9 @@ model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
     mode='max',
     save_best_only=True)
 
-
 history = model.fit(
     x = train_ds,
-    epochs = EPOCHS,
+    epochs = params.EPOCHS,
     validation_data = val_ds,
     callbacks=[model_checkpoint_callback]
     )
