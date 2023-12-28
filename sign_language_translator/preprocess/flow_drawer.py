@@ -4,8 +4,8 @@ import numpy as np
 
 from preprocess.models import FrameInfo, HandInfo
 
-def create_pose_mask(frame_info: FrameInfo, src_img: cv2.typing.MatLike) -> cv2.typing.MatLike:
-    mask = np.zeros_like(src_img)
+def create_pose_mask(frame_info: FrameInfo, src_img: cv2.typing.MatLike, draw_on_src: bool = False) -> cv2.typing.MatLike:
+    mask = src_img.copy() if draw_on_src else np.zeros_like(src_img) 
     height, width, _ = mask.shape
 
     if frame_info.pose_info:
@@ -48,8 +48,8 @@ def create_pose_mask(frame_info: FrameInfo, src_img: cv2.typing.MatLike) -> cv2.
         draw_line(30,32)
     return mask
 
-def create_hand_mask(frame_info: FrameInfo, src_img: cv2.typing.MatLike) -> cv2.typing.MatLike:
-    mask = np.zeros_like(src_img)
+def create_hand_mask(frame_info: FrameInfo, src_img: cv2.typing.MatLike, draw_on_src: bool = False) -> cv2.typing.MatLike:
+    mask = src_img.copy() if draw_on_src else np.zeros_like(src_img) 
     height, width, _ = mask.shape
 
     if frame_info.hand_infos:
@@ -59,7 +59,7 @@ def create_hand_mask(frame_info: FrameInfo, src_img: cv2.typing.MatLike) -> cv2.
                 # 絕對座標
                 start_x, start_y = hand.get_abs_landmark(start, width, height)
                 end_x, end_y = hand.get_abs_landmark(end, width, height)
-                cv2.line(mask, (start_x, start_y), (end_x, end_y), (255, 165, 0), 4)
+                cv2.line(mask, (start_x, start_y), (end_x, end_y), (0, 0, 225), 4)
             # Thumb
             draw_line(0,1)
             draw_line(1,2)
@@ -88,11 +88,12 @@ def create_hand_mask(frame_info: FrameInfo, src_img: cv2.typing.MatLike) -> cv2.
             draw_line(9,13)
             draw_line(13,17)
     return mask
-cnt = 0
+
 def create_timeline_flow_mask(
     frame_info: FrameInfo,
     src_img: cv2.typing.MatLike,
-    timeline_length = 7                 # 尾巴長度，這會追蹤前 tail_length 幀的資訊來產生
+    timeline_length = 7,           # 尾巴長度，這會追蹤前 tail_length 幀的資訊來產生
+    draw_on_src: bool = False,
     ) -> cv2.typing.MatLike:
 
     frame_infos = []
@@ -105,7 +106,7 @@ def create_timeline_flow_mask(
     
     frame_infos.reverse()
 
-    mask = np.zeros_like(src_img)
+    mask = src_img.copy() if draw_on_src else np.zeros_like(src_img) 
     height, width, _ = mask.shape
 
     def draw_claw_marks(start_hand_info: HandInfo, end_hand_info: HandInfo, ratio: bool) -> None:

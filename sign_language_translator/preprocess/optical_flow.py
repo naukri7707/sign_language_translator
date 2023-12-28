@@ -2,45 +2,55 @@ import cv2
 import numpy as np
 
 class OpticalFlow():
-    def __init__(self) -> None:
-        self.previous_gray = None
-        self.mask = None
+    def __init__(self, quality = 1, bound = 20) -> None:
+        self.DualTVL1 = cv2.optflow.DualTVL1OpticalFlow_create(scaleStep = 0.5, warps = 3, epsilon = 0.02) if quality == 1 \
+                        else cv2.DualTVL1OpticalFlow_create(warps = 1) if quality == 2 \
+                        else cv2.DualTVL1OpticalFlow_create() if quality == 3 \
+                        else None
+        if self.DualTVL1 is None:
+            raise Exception("Invalid quality value")
+
+        self.bound = bound
+
+        self.prvs_gray = None
+
         pass
 
-    def next(self, frame: cv2.typing.MatLike) -> (cv2.typing.MatLike, cv2.typing.MatLike, cv2.typing.MatLike):
-        if self.mask is None:
-            self.mask = np.zeros_like(frame)
-            self.previous_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    
+    def to_img(self, flow):
+        flow_with_3_channel = np.concatenate((flow, self.zero_mask), axis=2)
+        img = np.round((flow_with_3_channel + 1.0) * 127.5).astype(np.uint8)
+        return img
 
-        previous = self.previous_gray
-        mask = self.mask
+    def first(self, frame: cv2.typing.MatLike) -> (cv2.typing.MatLike, cv2.typing.MatLike, cv2.typing.MatLike):
+        h, w, _ = frame.shape
+        # 初始化一張全黑的 mask 用來與 flow 合併以產生圖片
+        self.zero_mask = np.zeros((h, w, 1), dtype = np.float32)
+        # save first image in black&white
+        self.prvs_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        flow = np.zeros((h, w, 2), dtype = np.float32)
         
+        return self.to_img(flow)
+
+    def next(self, frame: cv2.typing.MatLike) -> (cv2.typing.MatLike, cv2.typing.MatLike, cv2.typing.MatLike):
+        # first frame
+        if self.prvs_gray is None:
+            return self.first(frame)
+        
+        # get image in black&white
         next_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        # Calculate optical flow between the two frames
-        flow = cv2.calcOpticalFlowFarneback(previous, next_gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+        flow = self.DualTVL1.calc(self.prvs_gray, next_gray, None)
 
-        # Computes the magnitude and angle of the 2D vectors 
-        magnitude, angle = cv2.cartToPolar(flow[..., 0], flow[..., 1]) 
-        
-        # Sets image hue according to the optical flow  
-        # direction 
-        mask[..., 0] = angle * 180 / np.pi / 2
-        
-        # Sets image value according to the optical flow 
-        # magnitude (normalized) 
-        mask[..., 2] = cv2.normalize(magnitude, None, 0, 255, cv2.NORM_MINMAX) 
-        
-        # Converts HSV to RGB (BGR) color representation 
-        rgb = cv2.cvtColor(mask, cv2.COLOR_HSV2BGR) 
+        # only 2 dims
+        flow = flow[:, :, 0:2]
 
-        # Normalize x and y components
-        x_flow = cv2.normalize(flow[...,0], None, 0, 255, cv2.NORM_MINMAX)     
-        y_flow = cv2.normalize(flow[...,1], None, 0, 255, cv2.NORM_MINMAX)
-        x_flow = x_flow.astype('uint8')
-        y_flow = y_flow.astype('uint8')
+        # truncate to +/-15.0, then rescale to [-1.0, 1.0]
+        flow[flow > self.bound] = self.bound 
+        flow[flow < -self.bound] = -self.bound
+        flow = flow / self.bound
 
-        # Change - Make next frame previous frame
-        previous = next_gray.copy()
-        
-        return x_flow, y_flow, rgb
+        self.prvs_gray = next_gray
+
+        return self.to_img(flow)

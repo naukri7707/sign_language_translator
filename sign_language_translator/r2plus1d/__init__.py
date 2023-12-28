@@ -1,6 +1,6 @@
 import keras
 from keras import layers
-from r2plus1d.layers import Conv2Plus1D, ResidualMain, Project, ResizeVideo
+from .model_layers import Conv2Plus1D, ResidualMain, Project, ResizeVideo
 
 def add_residual_block(input, filters, kernel_size):
   """

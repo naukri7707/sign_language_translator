@@ -1,4 +1,5 @@
 tensorflow~=2.15.0
+tf-models-official~=2.15.0
 mediapipe~=0.10
 opencv-contrib-python~=4.8.1
 opencv-python~=4.8.1

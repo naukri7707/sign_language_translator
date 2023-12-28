@@ -2,6 +2,7 @@ import json
 from typing import List
 
 class SignWord:
+    class_id: int
     name: str
     zh_name: str
     phonetic: str
@@ -41,7 +42,7 @@ class SignWord:
     @staticmethod
     def from_json(json):
         return SignWord(
-            -1,
+            json['class_id'],
             json['name'],
             json['zh_name'],
             json['phonetic'],
