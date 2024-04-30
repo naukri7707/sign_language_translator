@@ -27,7 +27,10 @@ def on_traversed(file_path: Path):
     target_file_path = target_directory / file_path.relative_to(Path("~data/source"))
     target_file_path = target_file_path.with_suffix(".json")
     # 確保目標目錄存在
-    target_file_path.parent.mkdir(parents=True, exist_ok=True)
+    target_file_path.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
 
     image_frames = converter.to_image_frame.from_video(str(file_path))
     landmarks_frames = converter.to_landmarks_frame.from_image_frames(
@@ -39,3 +42,6 @@ def on_traversed(file_path: Path):
 
 
 utils.io.traverse_files("~data/source", on_traversed=on_traversed)
+
+mp_hands.close()
+mp_pose.close()
