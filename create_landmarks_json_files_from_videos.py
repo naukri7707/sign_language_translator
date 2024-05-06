@@ -21,19 +21,25 @@ mp_pose = mp.solutions.pose.Pose(  # type: ignore
 )
 
 
+src_folder_path = "~data/source"
+dst_folder_path = "~data/landmarks"
+dst_extension_name = ".json"
+
+
 def on_traversed(file_path: Path):
     # 建立對應的目標路徑
-    target_directory = Path("~data/landmarks")
-    target_file_path = target_directory / file_path.relative_to(Path("~data/source"))
-    target_file_path = target_file_path.with_suffix(".json")
+    target_directory = Path(dst_folder_path)
+    target_file_path = target_directory / file_path.relative_to(Path(src_folder_path))
+    target_file_path = target_file_path.with_suffix(dst_extension_name)
+
     # 確保目標目錄存在
     target_file_path.parent.mkdir(
         parents=True,
         exist_ok=True,
     )
 
-    image_frames = converter.to_image_frame.from_video(str(file_path))
-    landmarks_frames = converter.to_landmarks_frame.from_image_frames(
+    image_frames = converter.to_rgb_image_frame.from_video(str(file_path))
+    landmarks_frames = converter.to_landmarks_frame.from_rgb_image_frames(
         image_frames, mp_hands, mp_pose
     )
     converter.to_json_file.from_landmarks_frames(
@@ -41,7 +47,10 @@ def on_traversed(file_path: Path):
     )
 
 
-utils.io.traverse_files("~data/source", on_traversed=on_traversed)
+utils.io.traverse_files(
+    src_folder_path,
+    on_traversed=on_traversed,
+)
 
 mp_hands.close()
 mp_pose.close()
