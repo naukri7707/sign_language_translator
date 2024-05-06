@@ -2,7 +2,7 @@ import json
 import re
 from typing import Any, List
 
-from ..model import Hand, ImageFrame, Landmark, LandmarksFrame, Pose
+from ..model import Hand, Landmark, LandmarksFrame, Pose, RGBImageFrame
 from ..utils import dict_mapper
 
 
