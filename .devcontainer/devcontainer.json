@@ -1,7 +1,7 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/python
 {
-	"name": "tensorflow (GPU)",
+	"name": "pyTorch (GPU)",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
 	// "image": "tensorflow/tensorflow:2.15.0-gpu",
 	"build": {
@@ -14,15 +14,14 @@
 		// Passing the GPU to the target image,
 		// it's equivalent to running 'sudo docker run --gpus all -it tensorflow/tensorflow:latest-gpu bash'.
 		"--gpus",
-		"all",
-		"-it"
+		"all"
 	],
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "pip3 install --user -r .devcontainer/requirements.txt",
+	"postCreateCommand": "python -m venv .venv && . .venv/bin/activate && pip install -r .devcontainer/requirements.txt",
 	// Configure tool-specific properties.
 	"customizations": {
 		"vscode": {
@@ -30,7 +29,6 @@
 				"ms-python.python",
 				"ms-python.isort",
 				"ms-python.black-formatter",
-				"Codeium.codeium",
 				"jeff-hykin.bette-dockerfile-syntax"
 			]
 		}

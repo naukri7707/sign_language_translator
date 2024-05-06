@@ -101,6 +101,20 @@ class Hand:
     def pinky_tip(self) -> Landmark:
         return self.landmarks[20]
 
+    @property
+    def center(self) -> Landmark:
+        calc_landmarks = [
+            self.landmarks[0],
+            self.landmarks[5],
+            self.landmarks[9],
+            self.landmarks[13],
+            self.landmarks[17],
+        ]
+        x = sum(landmark.x for landmark in calc_landmarks) / len(calc_landmarks)
+        y = sum(landmark.y for landmark in calc_landmarks) / len(calc_landmarks)
+        z = sum(landmark.z for landmark in calc_landmarks) / len(calc_landmarks)
+        return Landmark(x, y, z)
+
 
 @dataclass(frozen=True)
 class Pose:
@@ -239,3 +253,16 @@ class Pose:
     @property
     def right_foot_index(self) -> Landmark:
         return self.landmarks[32]
+
+    @property
+    def center(self) -> Landmark:
+        calc_landmarks = [
+            self.landmarks[11],
+            self.landmarks[12],
+            self.landmarks[23],
+            self.landmarks[24],
+        ]
+        x = sum(landmark.x for landmark in calc_landmarks) / len(calc_landmarks)
+        y = sum(landmark.y for landmark in calc_landmarks) / len(calc_landmarks)
+        z = sum(landmark.z for landmark in calc_landmarks) / len(calc_landmarks)
+        return Landmark(x, y, z)

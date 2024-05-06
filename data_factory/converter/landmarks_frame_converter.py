@@ -1,10 +1,11 @@
+import json
 from typing import Any, List
 
-from ..model import Hand, ImageFrame, Landmark, LandmarksFrame, Pose
+from ..model import Hand, Landmark, LandmarksFrame, Pose, RGBImageFrame
 
 
 def from_image_frame(
-    image_frame: ImageFrame,
+    image_frame: RGBImageFrame,
     mp_hands: Any,
     mp_pose: Any,
 ) -> LandmarksFrame:
@@ -56,18 +57,18 @@ def from_image_frame(
     )
 
 
-def from_image_frames(
-    image_frames: List[ImageFrame],
+def from_rgb_image_frames(
+    image_frames: List[RGBImageFrame],
     mp_hands: Any,
     mp_pose: Any,
 ) -> List[LandmarksFrame]:
     """
-    Convert a list of ImageFrame to a list of LandmarksFrame
+    Convert a list of RGBImageFrame to a list of LandmarksFrame
 
     Sort the input list by frame number before conversion
 
     Args:
-        image_frames (List[ImageFrame]): The input list of ImageFrame
+        image_frames (List[RGBImageFrame]): The input list of RGBImageFrame
         mp_hands (Any): The MediaPipe hands model
         mp_pose (Any): The MediaPipe pose model
 
@@ -79,3 +80,18 @@ def from_image_frames(
     return [
         from_image_frame(image_frame, mp_hands, mp_pose) for image_frame in image_frames
     ]
+
+
+def from_json_file(json_file_path: str) -> List[LandmarksFrame]:
+    """Convert a JSON file to a list of LandmarksFrame
+
+    Args:
+        json_file_path (str): The path of the JSON file
+
+    Returns:
+        (List[LandmarksFrame]): The output list of LandmarksFrame
+    """
+    with open(json_file_path, "r") as file:
+        data = json.load(file)
+
+    return [LandmarksFrame.from_dict(frame) for frame in data]

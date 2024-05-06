@@ -1,4 +1,6 @@
-tensorflow~=2.15.0
+torch~=2.3.0
+torchaudio~=2.3.0
+torchvision~=0.18.0
 mediapipe~=0.10.11
 opencv-contrib-python~=4.8.1
 opencv-python~=4.8.1
